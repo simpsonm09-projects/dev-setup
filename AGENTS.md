@@ -1,6 +1,6 @@
 # dev-setup working agreements
 
-Repeatable workstation setup for the Windows machines and Ubuntu on WSL2.
+> **Retired.** Workstations are Linux now; machine setup lives in the `sakuragaoka-homelab` machine repositories. Do not reactivate this repository: no new setup work, no new tools, and no Windows or macOS support. It is a read-only archive.
 
 ## Ground rules
 
