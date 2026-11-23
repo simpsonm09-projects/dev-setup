@@ -24,7 +24,7 @@ Repeatable workstation setup for the Windows machines and Ubuntu on WSL2.
 - OpenCode and PStack configuration belongs to `maxstack`, not this repository.
 - Secrets: the `with-secrets` and `with-vault` wrappers live in `scripts/agent-vault/` and install to `~/.local/bin` and the Windows config directory. See `docs/secrets.md`.
 - Docs: `docs/README.md` indexes the setup order, the apps, the machine profiles, and the secrets. `docs/exceptions.md` records the rules this repository cannot meet yet.
-- Hooks: `just hooks` installs the shared Lefthook jobs from `simpsonm09-projects/.github` at the `hooks-v2` tag; `lefthook-local.yml` is git-ignored. Never skip a hook: no `LEFTHOOK=0`, no `--no-verify`, and never create `lefthook-local.yml` (C7.11). The ruleset is the real gate.
+- Hooks: `just hooks` installs the shared Lefthook jobs from `simpsonm09-projects/.github` at the `hooks-v3` tag; `lefthook-local.yml` is git-ignored. Never skip a hook: no `LEFTHOOK=0`, no `--no-verify`, and never create `lefthook-local.yml` (C7.11). The ruleset is the real gate.
 
 ## Skills
 
