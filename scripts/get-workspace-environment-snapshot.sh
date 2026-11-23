@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-list_dir() { if [[ -d "$1" ]]; then ls -1 "$1" 2>/dev/null | sort; fi; }
+list_dir() { if [[ -d "$1" ]]; then find "$1" -mindepth 1 -maxdepth 1 ! -name '.*' -printf '%f\n' 2>/dev/null | sort; fi; }
 
 config=""
 node_version=""; bun_version=""; docker_version=""

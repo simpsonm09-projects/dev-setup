@@ -39,7 +39,7 @@ if [[ "$mode" == preview ]]; then
 fi
 
 command -v gh >/dev/null 2>&1 || { echo 'GitHub CLI (gh) is required.' >&2; exit 1; }
-gh auth status >/dev/null 2>&1 || { echo 'Run `gh auth login` interactively first. Never paste credentials into chat.' >&2; exit 1; }
+gh auth status >/dev/null 2>&1 || { echo "Run \`gh auth login\` interactively first. Never paste credentials into chat." >&2; exit 1; }
 account="$(gh api user --jq .login)"
 if ! gh api "orgs/$owner" >/dev/null 2>&1; then
   printf 'Authenticated account %s cannot see the %s organization. No remotes changed.\n' "$account" "$owner" >&2
