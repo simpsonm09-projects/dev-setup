@@ -10,8 +10,15 @@
 function opensQuote(line, index) {
   if (index === 0) return true;
   const previous = line[index - 1];
-  return previous === ' ' || previous === '\t' || previous === ':' || previous === '-'
-    || previous === '[' || previous === '{' || previous === ',';
+  return (
+    previous === ' ' ||
+    previous === '\t' ||
+    previous === ':' ||
+    previous === '-' ||
+    previous === '[' ||
+    previous === '{' ||
+    previous === ','
+  );
 }
 
 export function stripComment(line) {
@@ -20,7 +27,10 @@ export function stripComment(line) {
     const char = line[index];
     if (quote !== null) {
       if (char === quote) {
-        if (quote === "'" && line[index + 1] === "'") { index += 1; continue; }
+        if (quote === "'" && line[index + 1] === "'") {
+          index += 1;
+          continue;
+        }
         quote = null;
       }
       continue;
@@ -76,13 +86,18 @@ function parseMapping(lines, index, indent) {
     if (line.indent !== indent) break;
     if (line.text.startsWith('- ') || line.text === '-') break;
     const { key, rest } = splitKey(line.text);
-    if (Object.prototype.hasOwnProperty.call(result, key)) throw new Error(`duplicate key "${key}"`);
+    if (Object.prototype.hasOwnProperty.call(result, key))
+      throw new Error(`duplicate key "${key}"`);
     cursor += 1;
     if (rest !== '') {
       result[key] = parseScalar(rest);
     } else if (cursor < lines.length && lines[cursor].indent > indent) {
       [result[key], cursor] = parseNode(lines, cursor, lines[cursor].indent);
-    } else if (cursor < lines.length && lines[cursor].indent === indent && lines[cursor].text.startsWith('- ')) {
+    } else if (
+      cursor < lines.length &&
+      lines[cursor].indent === indent &&
+      lines[cursor].text.startsWith('- ')
+    ) {
       [result[key], cursor] = parseSequence(lines, cursor, indent);
     } else {
       result[key] = null;

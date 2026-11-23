@@ -43,7 +43,8 @@ class EnvFileError extends Error {}
 export function readEnvFile(root) {
   const path = join(root, 'settings', '.env');
   const info = lstatSync(path);
-  if (info.isSymbolicLink() || !info.isFile()) throw new EnvFileError('settings/.env must be a regular file, not a link or directory');
+  if (info.isSymbolicLink() || !info.isFile())
+    throw new EnvFileError('settings/.env must be a regular file, not a link or directory');
   if (info.size > MAX_ENV_FILE_BYTES) throw new EnvFileError('settings/.env is larger than 64 KiB');
   return readFileSync(path, 'utf8');
 }
@@ -86,14 +87,20 @@ export function initializeEnvFile(root) {
 }
 
 function entryInfo(path) {
-  try { return lstatSync(path); } catch (error) {
+  try {
+    return lstatSync(path);
+  } catch (error) {
     if (error.code === 'ENOENT') return null;
     throw error;
   }
 }
 
 function isRegularFile(path) {
-  try { return lstatSync(path).isFile(); } catch { return false; }
+  try {
+    return lstatSync(path).isFile();
+  } catch {
+    return false;
+  }
 }
 
 // Expected store names are the uncommented KEY= lines of settings/.env.example,
@@ -102,7 +109,12 @@ export function expectedStoreNames(templateText) {
   const names = [];
   for (const line of readEnvLines(templateText)) {
     const match = /^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/.exec(line);
-    if (!match || match[1].toUpperCase().startsWith('INFISICAL_') || /#\s*optional\b/i.test(match[2])) continue;
+    if (
+      !match ||
+      match[1].toUpperCase().startsWith('INFISICAL_') ||
+      /#\s*optional\b/i.test(match[2])
+    )
+      continue;
     names.push(match[1]);
   }
   return names;

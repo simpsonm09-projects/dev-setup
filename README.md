@@ -28,9 +28,12 @@ Review the README and the per-platform instructions, then run the Windows instal
 | Command | Does |
 | --- | --- |
 | `just install` | Installs the pinned tools. |
-| `just lint` | Runs the linters. |
+| `just fmt` / `just fmt-check` | Formats the JavaScript with Bun, or checks the formatting. |
+| `just lint` | Lints the JavaScript with oxlint. |
+| `just test` | Checks the workspace wiring and runs the script tests. |
 | `just aislop` | Runs the AI-slop gate. |
-| `just verify` | Lints and runs the AI-slop gate. |
+| `just check` | Runs everything CI requires locally. |
+| `just verify` | Alias for `just check`. |
 
 ## Documentation
 

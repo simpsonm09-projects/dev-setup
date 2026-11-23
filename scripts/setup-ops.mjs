@@ -41,8 +41,11 @@ export function validateOperations(operations) {
     const id = op && typeof op.id === 'string' && op.id !== '' ? op.id : null;
     const label = id ? `"${id}"` : `operation ${index + 1}`;
     if (!id) errors.push(`${label}: id is required`);
-    if (!Array.isArray(op?.platforms) || op.platforms.length === 0) errors.push(`${label}: platforms is required`);
-    const hasScript = [op?.windows, op?.posix].some((value) => typeof value === 'string' && value !== '');
+    if (!Array.isArray(op?.platforms) || op.platforms.length === 0)
+      errors.push(`${label}: platforms is required`);
+    const hasScript = [op?.windows, op?.posix].some(
+      (value) => typeof value === 'string' && value !== '',
+    );
     if (!hasScript) errors.push(`${label}: a windows or posix script is required`);
   }
   return errors;
@@ -85,9 +88,10 @@ export function commandFor(operation, host, args) {
   const scriptKey = host === 'windows' ? 'windows' : 'posix';
   const script = operation[scriptKey];
   if (!script) return { error: `"${operation.id}" has no ${scriptKey} script`, status: 1 };
-  const command = host === 'windows'
-    ? ['pwsh', '-NoLogo', '-NoProfile', '-File', script, ...args]
-    : ['bash', script, ...args];
+  const command =
+    host === 'windows'
+      ? ['pwsh', '-NoLogo', '-NoProfile', '-File', script, ...args]
+      : ['bash', script, ...args];
   return { command, status: 0 };
 }
 
@@ -96,8 +100,13 @@ export function commandFor(operation, host, args) {
 export function dispatch(operation, args, { host = PLATFORM, spawn = spawnSync } = {}) {
   const { error, command, status } = commandFor(operation, host, args);
   if (error) return { status, error };
-  const result = spawn(command[0], command.slice(1), { windowsHide: true, cwd: ROOT, stdio: 'inherit' });
-  if (result.error) return { status: 1, error: `cannot run ${command[0]}: ${result.error.message}` };
+  const result = spawn(command[0], command.slice(1), {
+    windowsHide: true,
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  if (result.error)
+    return { status: 1, error: `cannot run ${command[0]}: ${result.error.message}` };
   return { status: result.status ?? 1 };
 }
 

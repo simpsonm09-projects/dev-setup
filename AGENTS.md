@@ -13,17 +13,17 @@ Repeatable workstation setup for the Windows machines and Ubuntu on WSL2.
 
 ## Commands
 
-- `just install`, `just workspace`, `just lint`, `just aislop`, `just verify`.
+- `just install`, `just fmt-check`, `just lint`, `just test`, `just check`.
 - `just tools`, `just tools-render`, `just tools-check`, `just tools-apply` drive the machine tool set from `tools.yaml`.
 
 ## Repo facts
 
-- Language and toolchain: PowerShell 7 (`pwsh`) on Windows, bash in WSL, and Node for the portable bootstrap (`scripts/workspace.mjs`). Windows PowerShell 5.1 is not supported for scripts that use `$PSScriptRoot` in parameter defaults.
+- Language and toolchain: PowerShell 7 (`pwsh`) on Windows, bash in WSL, and Node for the portable bootstrap (`scripts/workspace.mjs`). Bun 1.4.5 formats and lints the `.mjs` scripts; the `node:test` suite and the Windows-target PowerShell stay on their runtimes until the C7.3/C7.4 migration recorded in `docs/exceptions.md`. Windows PowerShell 5.1 is not supported for scripts that use `$PSScriptRoot` in parameter defaults.
 - Machines: two storage classes, `storage-ample` and `storage-constrained`, in `docs/machines/`. Detect with `pwsh -File scripts/Get-MachineProfile.ps1`.
 - Docker runs inside Ubuntu WSL, not Docker Desktop.
 - OpenCode and PStack configuration belongs to `maxstack`, not this repository.
 - Secrets: the `with-secrets` and `with-vault` wrappers live in `scripts/agent-vault/` and install to `~/.local/bin` and the Windows config directory. See `docs/secrets.md`.
-- Docs: `docs/README.md` indexes the setup order, the apps, the machine profiles, and the secrets.
+- Docs: `docs/README.md` indexes the setup order, the apps, the machine profiles, and the secrets. `docs/exceptions.md` records the rules this repository cannot meet yet.
 
 ## Skills
 

@@ -2,7 +2,8 @@
 // Options are read only before the tool. Everything from the tool onward is the
 // tool's argv, unchanged, so a tool's own --offline or --require is not ours.
 
-export const USAGE = 'usage: with-secrets [--offline] [--require NAMES]... [--only NAMES]... [--] <tool> [args...]';
+export const USAGE =
+  'usage: with-secrets [--offline] [--require NAMES]... [--only NAMES]... [--] <tool> [args...]';
 const NAME_LIST = /^[A-Za-z_][A-Za-z0-9_]*(,[A-Za-z_][A-Za-z0-9_]*)*$/;
 const LIST_OPTIONS = { '--require': 'required', '--only': 'only' };
 
@@ -18,7 +19,8 @@ function readOption(argv, index, options) {
   const list = LIST_OPTIONS[token];
   if (!list) return { error: `unknown option ${token}` };
   const value = argv[index + 1];
-  if (value === undefined || !NAME_LIST.test(value)) return { error: `${token} needs a comma-separated list of names` };
+  if (value === undefined || !NAME_LIST.test(value))
+    return { error: `${token} needs a comma-separated list of names` };
   options[list].push(...value.split(','));
   return { next: index + 2 };
 }

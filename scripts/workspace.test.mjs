@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +29,10 @@ function makeRoot(t, names) {
   mkdirSync(catalog, { recursive: true });
   writeFileSync(
     join(catalog, 'repos.json'),
-    JSON.stringify({ org: 'simpsonm09-projects', repos: [...names, ROSTER_REPO].map((name) => ({ name, tier: 'fixture' })) }),
+    JSON.stringify({
+      org: 'simpsonm09-projects',
+      repos: [...names, ROSTER_REPO].map((name) => ({ name, tier: 'fixture' })),
+    }),
   );
   return root;
 }
@@ -40,9 +51,16 @@ function fakeGh(root) {
   const bin = join(root, 'bin');
   const log = join(root, 'gh.log');
   mkdirSync(bin, { recursive: true });
-  writeFileSync(join(bin, 'gh'), `#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> '${log}'\nmkdir -p "\${@: -1}"\n`);
+  writeFileSync(
+    join(bin, 'gh'),
+    `#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> '${log}'\nmkdir -p "\${@: -1}"\n`,
+  );
   chmodSync(join(bin, 'gh'), 0o755);
-  return { bin, calls: () => (existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : []) };
+  return {
+    bin,
+    calls: () =>
+      existsSync(log) ? readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : [],
+  };
 }
 
 test('the roster slug names the organization', () => {
@@ -66,7 +84,9 @@ test('an apply run clones each repository from the organization as origin', (t) 
   const { bin, calls } = fakeGh(root);
   const result = run(root, ['--apply'], { PATH: `${bin}:${process.env.PATH}` });
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(calls(), [`repo clone simpsonm09-projects/alpha ${join(root, 'projects', 'repos', 'alpha')}`]);
+  assert.deepEqual(calls(), [
+    `repo clone simpsonm09-projects/alpha ${join(root, 'projects', 'repos', 'alpha')}`,
+  ]);
   assert.doesNotMatch(result.stdout, /upstream/);
   assert.match(result.stdout, /applied {2}repositories=1/);
 });

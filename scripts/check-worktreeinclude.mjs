@@ -20,14 +20,17 @@ function allowedRule(rule) {
   if (/[*?[\]{}!:]/.test(path)) return false;
   // Drop `.` segments first so `settings/./.env` normalizes to the same file as `settings/.env`.
   const segments = path.split('/').filter((segment) => segment !== '.');
-  if (!segments.length || segments.some((segment) => segment === '' || segment === '..')) return false;
+  if (!segments.length || segments.some((segment) => segment === '' || segment === '..'))
+    return false;
   if (KNOWN_SECRET_SOURCES.has(segments.join('/').toLowerCase())) return false;
   if (segments.slice(0, -1).some((segment) => SECRET_NAME.test(segment))) return false;
   return LOCAL_CONFIG_ENV.test(segments.at(-1));
 }
 
 export function forbiddenRules(text) {
-  return text.split(/\r?\n/).map((line) => line.trim())
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
     .filter((line) => !allowedRule(line));
 }

@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { commandFor, dispatch, hostMatches, hostPlatform, validateOperations } from './setup-ops.mjs';
+import {
+  commandFor,
+  dispatch,
+  hostMatches,
+  hostPlatform,
+  validateOperations,
+} from './setup-ops.mjs';
 
 test('hostPlatform maps the runtime to the manifest vocabulary', () => {
   assert.equal(hostPlatform('win32'), 'windows');
@@ -25,7 +31,13 @@ test('a macOS host refuses a linux operation before spawning', () => {
   const result = dispatch(
     { id: 'bootstrap', platforms: ['linux'], posix: 'wsl/bootstrap.sh' },
     [],
-    { host: 'macos', spawn: () => { spawned = true; return { status: 0 }; } },
+    {
+      host: 'macos',
+      spawn: () => {
+        spawned = true;
+        return { status: 0 };
+      },
+    },
   );
   assert.equal(spawned, false);
   assert.equal(result.status, 3);
@@ -37,7 +49,13 @@ test('a linux host refuses a windows operation before spawning', () => {
   const result = dispatch(
     { id: 'import-secrets', platforms: ['windows'], windows: 'scripts/Import-Secrets.ps1' },
     [],
-    { host: 'linux', spawn: () => { spawned = true; return { status: 0 }; } },
+    {
+      host: 'linux',
+      spawn: () => {
+        spawned = true;
+        return { status: 0 };
+      },
+    },
   );
   assert.equal(spawned, false);
   assert.equal(result.status, 3);
@@ -54,7 +72,13 @@ test('a linux host runs a linux operation through bash', () => {
       posix: 'scripts/get-workspace-environment-snapshot.sh',
     },
     ['--write'],
-    { host: 'linux', spawn: (command, args) => { calls.push([command, args]); return { status: 0 }; } },
+    {
+      host: 'linux',
+      spawn: (command, args) => {
+        calls.push([command, args]);
+        return { status: 0 };
+      },
+    },
   );
   assert.equal(result.status, 0);
   assert.deepEqual(calls, [['bash', ['scripts/get-workspace-environment-snapshot.sh', '--write']]]);
@@ -62,11 +86,13 @@ test('a linux host runs a linux operation through bash', () => {
 
 test('a macOS host runs a posix operation through bash', () => {
   const calls = [];
-  dispatch(
-    { id: 'publish-repos', platforms: ['posix'], posix: 'scripts/publish-repos.sh' },
-    [],
-    { host: 'macos', spawn: (command, args) => { calls.push([command, args]); return { status: 0 }; } },
-  );
+  dispatch({ id: 'publish-repos', platforms: ['posix'], posix: 'scripts/publish-repos.sh' }, [], {
+    host: 'macos',
+    spawn: (command, args) => {
+      calls.push([command, args]);
+      return { status: 0 };
+    },
+  });
   assert.deepEqual(calls, [['bash', ['scripts/publish-repos.sh']]]);
 });
 
@@ -75,13 +101,25 @@ test('a windows host runs a windows operation through pwsh', () => {
   dispatch(
     { id: 'import-secrets', platforms: ['windows'], windows: 'scripts/Import-Secrets.ps1' },
     ['-Apply'],
-    { host: 'windows', spawn: (command, args) => { calls.push([command, args]); return { status: 0 }; } },
+    {
+      host: 'windows',
+      spawn: (command, args) => {
+        calls.push([command, args]);
+        return { status: 0 };
+      },
+    },
   );
-  assert.deepEqual(calls, [['pwsh', ['-NoLogo', '-NoProfile', '-File', 'scripts/Import-Secrets.ps1', '-Apply']]]);
+  assert.deepEqual(calls, [
+    ['pwsh', ['-NoLogo', '-NoProfile', '-File', 'scripts/Import-Secrets.ps1', '-Apply']],
+  ]);
 });
 
 test('commandFor refuses a host with no script for it', () => {
-  const result = commandFor({ id: 'bootstrap', platforms: ['linux'], windows: 'x.ps1' }, 'linux', []);
+  const result = commandFor(
+    { id: 'bootstrap', platforms: ['linux'], windows: 'x.ps1' },
+    'linux',
+    [],
+  );
   assert.equal(result.status, 1);
   assert.match(result.error, /has no posix script/);
 });

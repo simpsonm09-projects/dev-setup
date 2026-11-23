@@ -29,7 +29,17 @@ function materialize(root, manifest) {
 }
 
 const PLAN_ACTIONS = new Set(['present', 'install', 'manual', 'opt-in', 'deferred']);
-const MANAGER_WORDS = ['winget', 'msstore', 'scoop', 'brew', 'cask', 'apt', 'snap', 'npm', 'manual'];
+const MANAGER_WORDS = [
+  'winget',
+  'msstore',
+  'scoop',
+  'brew',
+  'cask',
+  'apt',
+  'snap',
+  'npm',
+  'manual',
+];
 
 // The agreement contract is the action set: the tool id, the manager, and the
 // action (install, opt-in, manual, or deferred). Presence is host-local. The
@@ -38,7 +48,9 @@ const MANAGER_WORDS = ['winget', 'msstore', 'scoop', 'brew', 'cask', 'apt', 'sna
 // action. A tool whose action or manager differs still fails the comparison.
 function planActionSet(lines, manifest, platform) {
   const managerById = new Map(
-    manifest.tools.filter((tool) => tool[platform]).map((tool) => [tool.id, tool[platform].manager]),
+    manifest.tools
+      .filter((tool) => tool[platform])
+      .map((tool) => [tool.id, tool[platform].manager]),
   );
   const actionSet = new Map();
   for (const line of lines) {
@@ -48,8 +60,9 @@ function planActionSet(lines, manifest, platform) {
     const action = match[1] === 'present' ? 'install' : match[1];
     // The shell plan does not name a manager on every line, so fall back to the
     // manager tools.yaml declares when the line does not spell one out.
-    const manager = MANAGER_WORDS.find((word) => new RegExp(`\\b${word}\\b`).test(match[3]))
-      ?? managerById.get(id);
+    const manager =
+      MANAGER_WORDS.find((word) => new RegExp(`\\b${word}\\b`).test(match[3])) ??
+      managerById.get(id);
     actionSet.set(id, { manager, action });
   }
   return actionSet;
@@ -65,7 +78,11 @@ function runShPlanDarwin() {
 }
 
 function runCli(command) {
-  return spawnSync(process.execPath, [TOOLS_CLI, command], { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8' });
+  return spawnSync(process.execPath, [TOOLS_CLI, command], {
+    windowsHide: true,
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
 }
 
 test('tools.yaml is valid and every claimed platform resolves', () => {
@@ -107,7 +124,10 @@ test('renderWslPackages covers every WSL manager tools.yaml declares', () => {
   ]);
   assert.deepEqual(wsl.snapPackages, [{ id: 'terminal', package: 'ghostty', classic: true }]);
   assert.equal(wsl.manualTools.opencode.updateCommand, 'opencode upgrade');
-  assert.deepEqual(wsl.deferredTools.map((entry) => entry.id), ['docker', 'llama-cpp']);
+  assert.deepEqual(
+    wsl.deferredTools.map((entry) => entry.id),
+    ['docker', 'llama-cpp'],
+  );
 });
 
 test('the Infisical pin reaches every npm install path as data', () => {
@@ -121,21 +141,45 @@ test('the Infisical pin reaches every npm install path as data', () => {
 });
 
 test('version and npm package validation keep install arguments safe', () => {
-  const tool = { id: 'x', name: 'X', role: 'r', kind: 'cli', consumers: ['human'], wsl: { manager: 'npm', package: 'x' } };
+  const tool = {
+    id: 'x',
+    name: 'X',
+    role: 'r',
+    kind: 'cli',
+    consumers: ['human'],
+    wsl: { manager: 'npm', package: 'x' },
+  };
   for (const policy of ['latest', 'vendor-auto-update', 'store-managed']) {
     assert.deepEqual(validateManifest({ tools: [{ ...tool, policy }] }), []);
   }
   for (const version of ['0.44.6', '0.44.6-rc.1']) {
     assert.deepEqual(validateManifest({ tools: [{ ...tool, version }] }), []);
   }
-  for (const version of ['0.44.6 --unsafe-perm', '^0.44.6', '0.44.6 --prefix=/tmp/x', 'latest', '0.44']) {
+  for (const version of [
+    '0.44.6 --unsafe-perm',
+    '^0.44.6',
+    '0.44.6 --prefix=/tmp/x',
+    'latest',
+    '0.44',
+  ]) {
     const errors = validateManifest({ tools: [{ ...tool, version }] });
     assert.equal(errors.length, 1, version);
     assert.match(errors[0], /x: version must be/);
   }
-  for (const packageName of ['x --evil', 'x@latest', '$(touch marker)', '../x', '@scope/x && echo bad']) {
-    const errors = validateManifest({ tools: [{ ...tool, wsl: { manager: 'npm', package: packageName } }] });
-    assert.ok(errors.some((error) => /npm package must be a safe package name/.test(error)), packageName);
+  for (const packageName of [
+    'x --evil',
+    'x@latest',
+    '$(touch marker)',
+    '../x',
+    '@scope/x && echo bad',
+  ]) {
+    const errors = validateManifest({
+      tools: [{ ...tool, wsl: { manager: 'npm', package: packageName } }],
+    });
+    assert.ok(
+      errors.some((error) => /npm package must be a safe package name/.test(error)),
+      packageName,
+    );
   }
   assert.equal(pinnedVersion({ version: 'latest --unsafe-perm' }), null);
   assert.equal(pinnedVersion({ version: '0.44.6' }), '0.44.6');
@@ -164,10 +208,19 @@ test('checkArtifacts reports schema errors without throwing', () => {
   for (const bad of [{ tools: [null] }, { tools: ['x'] }, { tools: 'null' }, { tools: [] }, {}]) {
     const errors = checkArtifacts('/nonexistent-root', bad);
     assert.ok(errors.length > 0);
-    assert.ok(!errors.some((error) => error.includes('is missing')), `schema errors only: ${errors}`);
+    assert.ok(
+      !errors.some((error) => error.includes('is missing')),
+      `schema errors only: ${errors}`,
+    );
   }
-  assert.match(checkArtifacts('/nonexistent-root', { tools: [null] }).join('\n'), /every tool must be a mapping/);
-  assert.match(checkArtifacts('/nonexistent-root', { tools: 'null' }).join('\n'), /tools must be a non-empty list/);
+  assert.match(
+    checkArtifacts('/nonexistent-root', { tools: [null] }).join('\n'),
+    /every tool must be a mapping/,
+  );
+  assert.match(
+    checkArtifacts('/nonexistent-root', { tools: 'null' }).join('\n'),
+    /tools must be a non-empty list/,
+  );
 });
 
 test('the committed artifacts match tools.yaml', () => {
@@ -206,7 +259,9 @@ test('check fails when a generated artifact is missing', () => {
 });
 
 test('validation rejects a tool with no role', () => {
-  const manifest = { tools: [{ id: 'x', name: 'X', kind: 'cli', wsl: { manager: 'apt', package: 'x' } }] };
+  const manifest = {
+    tools: [{ id: 'x', name: 'X', kind: 'cli', wsl: { manager: 'apt', package: 'x' } }],
+  };
   assert.match(validateManifest(manifest).join('\n'), /x: role is required/);
 });
 
@@ -219,28 +274,67 @@ test('validation rejects a tool with no consumers', () => {
 
 test('validation rejects an empty consumers list', () => {
   const manifest = {
-    tools: [{ id: 'x', name: 'X', role: 'r', kind: 'cli', consumers: [], wsl: { manager: 'apt', package: 'x' } }],
+    tools: [
+      {
+        id: 'x',
+        name: 'X',
+        role: 'r',
+        kind: 'cli',
+        consumers: [],
+        wsl: { manager: 'apt', package: 'x' },
+      },
+    ],
   };
   assert.match(validateManifest(manifest).join('\n'), /x: consumers must be a non-empty list/);
 });
 
 test('validation rejects a consumer that is not human or agent', () => {
   const manifest = {
-    tools: [{ id: 'x', name: 'X', role: 'r', kind: 'cli', consumers: ['robot'], wsl: { manager: 'apt', package: 'x' } }],
+    tools: [
+      {
+        id: 'x',
+        name: 'X',
+        role: 'r',
+        kind: 'cli',
+        consumers: ['robot'],
+        wsl: { manager: 'apt', package: 'x' },
+      },
+    ],
   };
-  assert.match(validateManifest(manifest).join('\n'), /x: consumer "robot" is not one of human, agent/);
+  assert.match(
+    validateManifest(manifest).join('\n'),
+    /x: consumer "robot" is not one of human, agent/,
+  );
 });
 
 test('validation accepts a consumers list of human and agent', () => {
   const manifest = {
-    tools: [{ id: 'x', name: 'X', role: 'r', kind: 'cli', consumers: ['human', 'agent'], wsl: { manager: 'apt', package: 'x' } }],
+    tools: [
+      {
+        id: 'x',
+        name: 'X',
+        role: 'r',
+        kind: 'cli',
+        consumers: ['human', 'agent'],
+        wsl: { manager: 'apt', package: 'x' },
+      },
+    ],
   };
   assert.deepEqual(validateManifest(manifest), []);
 });
 
 test('check rejects a string equivalents without throwing', () => {
   const manifest = {
-    tools: [{ id: 'x', name: 'X', role: 'r', kind: 'cli', equivalents: 'noctty', wsl: { manager: 'apt', package: 'x' } }],
+    tools: [
+      {
+        id: 'x',
+        name: 'X',
+        role: 'r',
+        kind: 'cli',
+        equivalents: 'noctty',
+        wsl: { manager: 'apt', package: 'x' },
+      },
+    ],
   };
   const errors = checkArtifacts('/nonexistent-root', manifest);
   assert.match(errors.join('\n'), /x: equivalents must be a list of strings/);
@@ -259,7 +353,9 @@ test('the agent tool set is exactly the tools whose consumers name agent', () =>
   const lines = agentToolLines(manifest);
   assert.match(lines[0], /^agent tools: \d+$/);
   const ids = lines.slice(1).map((line) => line.trim().split('\t')[0]);
-  const expected = manifest.tools.filter((tool) => tool.consumers.includes('agent')).map((tool) => tool.id);
+  const expected = manifest.tools
+    .filter((tool) => tool.consumers.includes('agent'))
+    .map((tool) => tool.id);
   assert.deepEqual(ids, expected);
   assert.ok(ids.includes('trivy'));
   assert.ok(!ids.includes('chrome'), 'a human-only app stays out of the agent set');
@@ -269,7 +365,10 @@ test('agent-tools.json holds id, name, role, kind, and per-platform install', ()
   const manifest = loadManifest(REPO_ROOT);
   const data = JSON.parse(renderArtifacts(manifest)['agent-tools.json']);
   const agentTools = manifest.tools.filter((tool) => tool.consumers.includes('agent'));
-  assert.deepEqual(data.tools.map((entry) => entry.id), agentTools.map((tool) => tool.id));
+  assert.deepEqual(
+    data.tools.map((entry) => entry.id),
+    agentTools.map((tool) => tool.id),
+  );
   for (const entry of data.tools) {
     assert.equal(typeof entry.name, 'string');
     assert.equal(typeof entry.role, 'string');
@@ -332,7 +431,11 @@ test('the sh plan agrees with the node plan on the action set for every tool', (
   // From Windows node, dpkg-query and snap are unreachable, so the presence
   // check legitimately differs from the shell plan's.
   if (process.platform !== 'linux') return;
-  const wsl = spawnSync('bash', ['scripts/apply-tools.sh', 'plan'], { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8' });
+  const wsl = spawnSync('bash', ['scripts/apply-tools.sh', 'plan'], {
+    windowsHide: true,
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
   if (wsl.error) return;
   assert.equal(wsl.status, 0, wsl.stderr);
   assert.deepEqual(
@@ -355,13 +458,21 @@ test('the sh twin exits non-zero when an install fails', () => {
     '[ -x "$d/sudo" ] || exit 99',
     'PATH="$d:$PATH" bash scripts/apply-tools.sh apply',
   ].join('\n');
-  const result = spawnSync('bash', ['-s'], { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8', input: script });
+  const result = spawnSync('bash', ['-s'], {
+    windowsHide: true,
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    input: script,
+  });
   if (result.error) return;
   assert.equal(result.status, 1, result.stderr);
 });
 
 test('the ps1 twin exits non-zero when an install fails', (t) => {
-  const probe = spawnSync('pwsh', ['-Command', '(Get-Command pwsh).Source'], { windowsHide: true, encoding: 'utf8' });
+  const probe = spawnSync('pwsh', ['-Command', '(Get-Command pwsh).Source'], {
+    windowsHide: true,
+    encoding: 'utf8',
+  });
   if (probe.error || probe.status !== 0) return t.skip('pwsh is not available');
   const stub = mkdtempSync(join(tmpdir(), 'tools-ps1-'));
   try {
@@ -381,42 +492,51 @@ test('the ps1 twin exits non-zero when an install fails', (t) => {
 // The stub tests below never install anything: every manager on the path is a
 // recording shell stub, and the exercised scripts read only committed files.
 function bashHasPython3Probe() {
-  const probe = spawnSync('bash', ['-c', 'command -v python3'], { windowsHide: true, encoding: 'utf8' });
+  const probe = spawnSync('bash', ['-c', 'command -v python3'], {
+    windowsHide: true,
+    encoding: 'utf8',
+  });
   return !probe.error && probe.status === 0;
 }
 
 // Every manager the apply paths can call is a stub: sudo, apt-get, snap, and
 // brew just exit 0, and npm prints each argv entry with a call marker.
-const stubApplyScript = (platform) => [
-  'set -e',
-  `uname() { echo ${platform}; }`,
-  'export -f uname',
-  'd=$(mktemp -d) || exit 99',
-  'trap \'rm -rf "$d"\' EXIT',
-  'export LOG="$d/npm-args.log"',
-  'cat > "$d/sudo" <<\'EOF\'',
-  '#!/bin/sh',
-  'exec "$@"',
-  'EOF',
-  'for name in apt-get snap brew npm; do',
-  'cat > "$d/$name" <<\'EOF\'',
-  '#!/bin/sh',
-  'exit 0',
-  'EOF',
-  'done',
-  'cat > "$d/npm" <<\'EOF\'',
-  '#!/bin/sh',
-  'echo CALL',
-  'for arg in "$@"; do echo "$arg"; done',
-  'exit 0',
-  'EOF',
-  'chmod +x "$d"/*',
-  'PATH="$d:$PATH" bash scripts/apply-tools.sh apply',
-].join('\n');
+const stubApplyScript = (platform) =>
+  [
+    'set -e',
+    `uname() { echo ${platform}; }`,
+    'export -f uname',
+    'd=$(mktemp -d) || exit 99',
+    'trap \'rm -rf "$d"\' EXIT',
+    'export LOG="$d/npm-args.log"',
+    'cat > "$d/sudo" <<\'EOF\'',
+    '#!/bin/sh',
+    'exec "$@"',
+    'EOF',
+    'for name in apt-get snap brew npm; do',
+    'cat > "$d/$name" <<\'EOF\'',
+    '#!/bin/sh',
+    'exit 0',
+    'EOF',
+    'done',
+    'cat > "$d/npm" <<\'EOF\'',
+    '#!/bin/sh',
+    'echo CALL',
+    'for arg in "$@"; do echo "$arg"; done',
+    'exit 0',
+    'EOF',
+    'chmod +x "$d"/*',
+    'PATH="$d:$PATH" bash scripts/apply-tools.sh apply',
+  ].join('\n');
 
 test('apply-tools.sh hands npm a pinned spec on the Linux path', (t) => {
   if (!bashHasPython3Probe()) return t.skip('bash python3 is not available');
-  const result = spawnSync('bash', ['-s'], { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8', input: stubApplyScript('Linux') });
+  const result = spawnSync('bash', ['-s'], {
+    windowsHide: true,
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    input: stubApplyScript('Linux'),
+  });
   if (result.error) return t.skip('bash is not available');
   assert.equal(result.status, 0, result.stderr);
   const calls = result.stdout.split(/\r?\n/).filter(Boolean);
@@ -436,7 +556,12 @@ test('apply-tools.sh hands npm a pinned spec on the Linux path', (t) => {
 
 test('apply-tools.sh hands npm a pinned spec on the macOS path', (t) => {
   if (!bashHasPython3Probe()) return t.skip('bash python3 is not available');
-  const result = spawnSync('bash', ['-s'], { windowsHide: true, cwd: REPO_ROOT, encoding: 'utf8', input: stubApplyScript('Darwin') });
+  const result = spawnSync('bash', ['-s'], {
+    windowsHide: true,
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+    input: stubApplyScript('Darwin'),
+  });
   if (result.error) return t.skip('bash is not available');
   assert.equal(result.status, 0, result.stderr);
   const calls = result.stdout.split(/\r?\n/).filter(Boolean);
@@ -456,7 +581,10 @@ test('apply-tools.sh hands npm a pinned spec on the macOS path', (t) => {
 
 test('apply-tools.ps1 hands npm a pinned spec on the Windows path', (t) => {
   if (process.platform !== 'win32') return t.skip('the Windows path fixture requires Windows');
-  const probe = spawnSync('pwsh', ['-Command', '(Get-Command pwsh).Source'], { windowsHide: true, encoding: 'utf8' });
+  const probe = spawnSync('pwsh', ['-Command', '(Get-Command pwsh).Source'], {
+    windowsHide: true,
+    encoding: 'utf8',
+  });
   if (probe.error || probe.status !== 0) return t.skip('pwsh is not available');
   const stub = mkdtempSync(join(tmpdir(), 'tools-ps1-pin-'));
   try {
@@ -476,14 +604,18 @@ test('apply-tools.ps1 hands npm a pinned spec on the Windows path', (t) => {
     // The stub prints each of the three argv values in a delimited line, so the
     // Windows path is observable without a real npm or network.
     const npmCalls = result.stdout.split(/\r?\n/).filter((line) => line.startsWith('CALL:'));
-    assert.deepEqual(npmCalls, [
-      'CALL:install|-g|postman-cli',
-      'CALL:install|-g|newman',
-      'CALL:install|-g|@infisical/cli@0.44.6',
-      'CALL:install|-g|@playwright/cli',
-      'CALL:install|-g|chrome-devtools',
-      'CALL:install|-g|ctx7',
-    ], result.stdout);
+    assert.deepEqual(
+      npmCalls,
+      [
+        'CALL:install|-g|postman-cli',
+        'CALL:install|-g|newman',
+        'CALL:install|-g|@infisical/cli@0.44.6',
+        'CALL:install|-g|@playwright/cli',
+        'CALL:install|-g|chrome-devtools',
+        'CALL:install|-g|ctx7',
+      ],
+      result.stdout,
+    );
   } finally {
     rmSync(stub, { recursive: true, force: true });
   }

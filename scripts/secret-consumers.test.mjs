@@ -11,9 +11,17 @@ const FIXTURES = join(HERE, 'fixtures', 'secret-consumers');
 const SENTINEL = 'SENTINEL-NOT-A-SECRET-1234';
 
 function run(file) {
-  return spawnSync(process.execPath, [join(HERE, 'check-secret-consumers.mjs'), ...(file ? [file] : [])], {
-    encoding: 'utf8', windowsHide: true, timeout: 10000, env: {}, cwd: HERE,
-  });
+  return spawnSync(
+    process.execPath,
+    [join(HERE, 'check-secret-consumers.mjs'), ...(file ? [file] : [])],
+    {
+      encoding: 'utf8',
+      windowsHide: true,
+      timeout: 10000,
+      env: {},
+      cwd: HERE,
+    },
+  );
 }
 
 function valid() {
@@ -27,13 +35,30 @@ test('repository declarations and valid synthetic fixture pass without a secret 
     assert.equal(result.stdout, '');
     assert.equal(result.stderr, '');
   }
-  const declarations = JSON.parse(readFileSync(join(HERE, '..', 'settings', 'secret-consumers.json'), 'utf8'));
-  assert.deepEqual(declarations.consumers.map((entry) => entry.consumer), [
-    'agent-discord', 'human-discord', 'agent-postman', 'human-postman',
-    'notifications', 'sms', 'mail', 'github', 'signing', 'model-gateway',
-  ]);
+  const declarations = JSON.parse(
+    readFileSync(join(HERE, '..', 'settings', 'secret-consumers.json'), 'utf8'),
+  );
+  assert.deepEqual(
+    declarations.consumers.map((entry) => entry.consumer),
+    [
+      'agent-discord',
+      'human-discord',
+      'agent-postman',
+      'human-postman',
+      'notifications',
+      'sms',
+      'mail',
+      'github',
+      'signing',
+      'model-gateway',
+    ],
+  );
   const gateway = declarations.consumers.at(-1);
-  assert.deepEqual(gateway.credentialNames, ['DEEPSEEK_API_KEY', 'LITELLM_MASTER_KEY', 'POSTGRES_PASSWORD']);
+  assert.deepEqual(gateway.credentialNames, [
+    'DEEPSEEK_API_KEY',
+    'LITELLM_MASTER_KEY',
+    'POSTGRES_PASSWORD',
+  ]);
   assert.deepEqual(gateway.operations, ['gateway-start']);
 });
 
@@ -53,7 +78,19 @@ for (const [file, field] of [
 }
 
 test('all value-bearing field names are rejected recursively, regardless of case', () => {
-  for (const field of ['token', 'password', 'secret', 'clientSecret', 'apiKey', 'key', 'authorization', 'headers', 'env', 'TOKEN', 'Authorization']) {
+  for (const field of [
+    'token',
+    'password',
+    'secret',
+    'clientSecret',
+    'apiKey',
+    'key',
+    'authorization',
+    'headers',
+    'env',
+    'TOKEN',
+    'Authorization',
+  ]) {
     const data = valid();
     data.consumers[0][field] = { nested: SENTINEL };
     assert.throws(() => validateConsumers(data), { message: `$.consumers[0].${field}` });
@@ -61,8 +98,14 @@ test('all value-bearing field names are rejected recursively, regardless of case
 });
 
 test('credential prefixes, embedded bearer auth, long hex and base64 strings fail without values', () => {
-  for (const value of [`sk-${SENTINEL}`, `ghp_${SENTINEL}`, `github_pat_${SENTINEL}`,
-    `prefix Bearer ${SENTINEL}`, 'a'.repeat(32), 'Ab9/'.repeat(12)]) {
+  for (const value of [
+    `sk-${SENTINEL}`,
+    `ghp_${SENTINEL}`,
+    `github_pat_${SENTINEL}`,
+    `prefix Bearer ${SENTINEL}`,
+    'a'.repeat(32),
+    'Ab9/'.repeat(12),
+  ]) {
     const data = valid();
     data.consumers[0].credentialNames[0] = value;
     assert.throws(() => validateConsumers(data), { message: '$.consumers[0].credentialNames[0]' });
@@ -71,15 +114,60 @@ test('credential prefixes, embedded bearer auth, long hex and base64 strings fai
 
 test('unknown fields, caller executables, missing fields, bad types, and credential environment names fail', () => {
   const cases = [
-    [(data) => { data.extra = SENTINEL; }, '$.extra'],
-    [(data) => { data.consumers[0].executable = SENTINEL; }, '$.consumers[0].executable'],
-    [(data) => { delete data.consumers[0].bundle; }, '$.consumers[0].bundle'],
-    [(data) => { data.consumers[0].operations = 'sign'; }, '$.consumers[0].operations'],
-    [(data) => { data.consumers[0].credentialNames = []; }, '$.consumers[0].credentialNames'],
-    [(data) => { data.consumers[0].credentialNames = ['BAD NAME']; }, '$.consumers[0].credentialNames[0]'],
-    [(data) => { data.agentEnvironmentAllowlist = ['GH_TOKEN']; }, '$.agentEnvironmentAllowlist[0]'],
-    [(data) => { data.agentEnvironmentAllowlist = ['PATH']; }, '$.agentEnvironmentAllowlist[0]'],
-    [(data) => { data.agentEnvironmentAllowlist = ['LANG', 'LANG']; }, '$.agentEnvironmentAllowlist'],
+    [
+      (data) => {
+        data.extra = SENTINEL;
+      },
+      '$.extra',
+    ],
+    [
+      (data) => {
+        data.consumers[0].executable = SENTINEL;
+      },
+      '$.consumers[0].executable',
+    ],
+    [
+      (data) => {
+        delete data.consumers[0].bundle;
+      },
+      '$.consumers[0].bundle',
+    ],
+    [
+      (data) => {
+        data.consumers[0].operations = 'sign';
+      },
+      '$.consumers[0].operations',
+    ],
+    [
+      (data) => {
+        data.consumers[0].credentialNames = [];
+      },
+      '$.consumers[0].credentialNames',
+    ],
+    [
+      (data) => {
+        data.consumers[0].credentialNames = ['BAD NAME'];
+      },
+      '$.consumers[0].credentialNames[0]',
+    ],
+    [
+      (data) => {
+        data.agentEnvironmentAllowlist = ['GH_TOKEN'];
+      },
+      '$.agentEnvironmentAllowlist[0]',
+    ],
+    [
+      (data) => {
+        data.agentEnvironmentAllowlist = ['PATH'];
+      },
+      '$.agentEnvironmentAllowlist[0]',
+    ],
+    [
+      (data) => {
+        data.agentEnvironmentAllowlist = ['LANG', 'LANG'];
+      },
+      '$.agentEnvironmentAllowlist',
+    ],
   ];
   for (const [mutate, path] of cases) {
     const data = valid();
@@ -93,7 +181,10 @@ test('malformed JSON and hostile property names cannot leak input through CLI er
   const root = mkdtempSync(join(FIXTURES, 'generated-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const file = join(root, 'synthetic.json');
-  for (const text of [`{"token":"${SENTINEL}"`, JSON.stringify({ ...valid(), [`Bearer ${SENTINEL}`]: SENTINEL })]) {
+  for (const text of [
+    `{"token":"${SENTINEL}"`,
+    JSON.stringify({ ...valid(), [`Bearer ${SENTINEL}`]: SENTINEL }),
+  ]) {
     writeFileSync(file, text);
     const result = run(file);
     assert.equal(result.status, 1);

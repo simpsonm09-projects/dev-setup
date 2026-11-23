@@ -45,7 +45,10 @@ function validateSchema(value, schema, path) {
     }
   } else if (type === 'array') {
     if (value.length < (schema.minItems ?? 0)) throw new Error(path);
-    if (schema.uniqueItems && new Set(value.map((item) => JSON.stringify(item))).size !== value.length) {
+    if (
+      schema.uniqueItems &&
+      new Set(value.map((item) => JSON.stringify(item))).size !== value.length
+    ) {
       throw new Error(path);
     }
     value.forEach((item, index) => validateSchema(item, schema.items, `${path}[${index}]`));
@@ -76,7 +79,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     try {
       validateConsumers(parsed);
     } catch (error) {
-      field = /^\$(?:\.[A-Za-z][A-Za-z0-9_]*|\.\[field\]|\[\d+\])*$/.test(error.message) ? error.message : '$';
+      field = /^\$(?:\.[A-Za-z][A-Za-z0-9_]*|\.\[field\]|\[\d+\])*$/.test(error.message)
+        ? error.message
+        : '$';
       process.stderr.write(`secret-consumers: ${field}\n`);
       process.exitCode = 1;
     }

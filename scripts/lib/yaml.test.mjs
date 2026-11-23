@@ -4,22 +4,24 @@ import test from 'node:test';
 import { parseYaml, stripComment } from './yaml.mjs';
 
 test('parseYaml reads block mappings, sequences, and scalars', () => {
-  const parsed = parseYaml([
-    'name: example',
-    'count: 3',
-    'enabled: true',
-    'missing: null',
-    'items:',
-    '  - id: one',
-    '    role: first',
-    '  - id: two',
-    '    tags:',
-    '      - a',
-    '      - b',
-    'fallback:',
-    '  - manager: scoop',
-    '    package: gh',
-  ].join('\n'));
+  const parsed = parseYaml(
+    [
+      'name: example',
+      'count: 3',
+      'enabled: true',
+      'missing: null',
+      'items:',
+      '  - id: one',
+      '    role: first',
+      '  - id: two',
+      '    tags:',
+      '      - a',
+      '      - b',
+      'fallback:',
+      '  - manager: scoop',
+      '    package: gh',
+    ].join('\n'),
+  );
   assert.equal(parsed.name, 'example');
   assert.equal(parsed.count, 3);
   assert.equal(parsed.enabled, true);

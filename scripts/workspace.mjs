@@ -70,7 +70,10 @@ function clone(name) {
 }
 
 function refExists(dir, ref) {
-  return spawnSync('git', ['rev-parse', '--verify', '--quiet', ref], { windowsHide: true, cwd: dir }).status === 0;
+  return (
+    spawnSync('git', ['rev-parse', '--verify', '--quiet', ref], { windowsHide: true, cwd: dir })
+      .status === 0
+  );
 }
 
 // A history rewrite (filter-repo) or a rebuilt branch drops branch.main.*, which
@@ -146,8 +149,9 @@ function main() {
 
   if (!existsSync(rosterFile)) {
     process.stdout.write(
-      write ? `note  ${rosterFile} is still missing, cannot read the roster\n`
-            : 'note  repo-catalog is not cloned yet, so the roster is unknown in this dry run\n',
+      write
+        ? `note  ${rosterFile} is still missing, cannot read the roster\n`
+        : 'note  repo-catalog is not cloned yet, so the roster is unknown in this dry run\n',
     );
     return;
   }

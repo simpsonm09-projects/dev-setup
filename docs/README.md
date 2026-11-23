@@ -27,3 +27,7 @@ Index for this repository.
 
 - [Machines](machines/README.md) compares the hardware setup options.
 - [Windows 10 server](machines/windows-10-server.md) covers the server machine.
+
+## Exceptions
+
+- [Exceptions](exceptions.md) records the rules this repository cannot meet yet.
