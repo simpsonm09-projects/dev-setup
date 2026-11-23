@@ -15,7 +15,14 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { parseYaml } from './lib/yaml.mjs';
-import { consumesAgent, installLabel, pinnedVersion, platformInstall, renderArtifacts, sectionPackages } from './lib/render.mjs';
+import {
+  consumesAgent,
+  installLabel,
+  pinnedVersion,
+  platformInstall,
+  renderArtifacts,
+  sectionPackages,
+} from './lib/render.mjs';
 
 export { parseYaml, renderArtifacts, pinnedVersion };
 
@@ -51,7 +58,16 @@ export const GENERATED_FILES = [
 // The subset an agent-facing check covers: the manifest, then these artifacts.
 export const AGENT_FILES = ['agent-tools.json', 'docs/agent-tools.md'];
 
-export const MANAGERS = new Set(['winget', 'msstore', 'scoop', 'brew', 'apt', 'snap', 'npm', 'manual']);
+export const MANAGERS = new Set([
+  'winget',
+  'msstore',
+  'scoop',
+  'brew',
+  'apt',
+  'snap',
+  'npm',
+  'manual',
+]);
 export const KINDS = new Set(['app', 'cli']);
 export const CONSUMERS = new Set(['human', 'agent']);
 const PLATFORMS = ['windows', 'wsl', 'macos'];
@@ -115,7 +131,10 @@ function sectionErrors(tool, platform, section, errors) {
   }
   if (section.fallback !== undefined) {
     if (!Array.isArray(section.fallback)) errors.push(`${where}.fallback must be a list`);
-    else section.fallback.forEach((entry, position) => sectionErrors(tool, `${platform}.fallback[${position}]`, entry, errors));
+    else
+      section.fallback.forEach((entry, position) =>
+        sectionErrors(tool, `${platform}.fallback[${position}]`, entry, errors),
+      );
   }
 }
 
@@ -134,24 +153,35 @@ export function validateManifest(manifest) {
     if (typeof tool.id !== 'string' || tool.id === '') errors.push('a tool has no id');
     else if (seen.has(tool.id)) errors.push(`duplicate tool id "${tool.id}"`);
     else seen.add(tool.id);
-    if (typeof tool.name !== 'string' || tool.name === '') errors.push(`${tool.id}: name is required`);
-    if (typeof tool.role !== 'string' || tool.role === '') errors.push(`${tool.id}: role is required`);
+    if (typeof tool.name !== 'string' || tool.name === '')
+      errors.push(`${tool.id}: name is required`);
+    if (typeof tool.role !== 'string' || tool.role === '')
+      errors.push(`${tool.id}: role is required`);
     if (!KINDS.has(tool.kind)) errors.push(`${tool.id}: kind must be app or cli`);
     if (!Array.isArray(tool.consumers) || tool.consumers.length === 0) {
       errors.push(`${tool.id}: consumers must be a non-empty list`);
     } else {
       for (const consumer of tool.consumers) {
         if (!CONSUMERS.has(consumer)) {
-          errors.push(`${tool.id}: consumer "${consumer}" is not one of ${[...CONSUMERS].join(', ')}`);
+          errors.push(
+            `${tool.id}: consumer "${consumer}" is not one of ${[...CONSUMERS].join(', ')}`,
+          );
         }
       }
     }
-    if (tool.equivalents !== undefined
-      && (!Array.isArray(tool.equivalents) || tool.equivalents.some((entry) => typeof entry !== 'string'))) {
+    if (
+      tool.equivalents !== undefined &&
+      (!Array.isArray(tool.equivalents) ||
+        tool.equivalents.some((entry) => typeof entry !== 'string'))
+    ) {
       errors.push(`${tool.id}: equivalents must be a list of strings`);
     }
-    if (tool.policy !== undefined && !POLICY_KEYWORDS.has(tool.policy)) errors.push(`${tool.id}: policy must be ${[...POLICY_KEYWORDS].join(', ')}`);
-    if (tool.version !== undefined && (typeof tool.version !== 'string' || !EXACT_VERSION.test(tool.version))) {
+    if (tool.policy !== undefined && !POLICY_KEYWORDS.has(tool.policy))
+      errors.push(`${tool.id}: policy must be ${[...POLICY_KEYWORDS].join(', ')}`);
+    if (
+      tool.version !== undefined &&
+      (typeof tool.version !== 'string' || !EXACT_VERSION.test(tool.version))
+    ) {
       errors.push(`${tool.id}: version must be an exact version like 0.44.6`);
     }
     const platforms = PLATFORMS.filter((platform) => tool[platform] !== undefined);
@@ -161,7 +191,8 @@ export function validateManifest(manifest) {
       const section = tool[platform];
       if (section?.manager === 'npm') {
         for (const pkg of sectionPackages(section)) {
-          if (typeof pkg !== 'string' || !NPM_PACKAGE.test(pkg)) errors.push(`${tool.id}.${platform}: npm package must be a safe package name`);
+          if (typeof pkg !== 'string' || !NPM_PACKAGE.test(pkg))
+            errors.push(`${tool.id}.${platform}: npm package must be a safe package name`);
         }
       }
     }
@@ -274,7 +305,9 @@ function main() {
   if (command === 'check') {
     const errors = checkArtifacts(REPO_ROOT, manifest);
     if (errors.length > 0) fail(errors);
-    process.stdout.write(`check: ok (${manifest.tools.length} tools, ${GENERATED_FILES.length} artifacts)\n`);
+    process.stdout.write(
+      `check: ok (${manifest.tools.length} tools, ${GENERATED_FILES.length} artifacts)\n`,
+    );
     return;
   }
   if (command === 'plan') {
@@ -292,7 +325,9 @@ function main() {
   if (command === 'ai-check') {
     const errors = checkArtifacts(REPO_ROOT, manifest, AGENT_FILES);
     if (errors.length > 0) fail(errors);
-    process.stdout.write(`ai-check: ok (${manifest.tools.filter(consumesAgent).length} agent tools, ${AGENT_FILES.length} artifacts)\n`);
+    process.stdout.write(
+      `ai-check: ok (${manifest.tools.filter(consumesAgent).length} agent tools, ${AGENT_FILES.length} artifacts)\n`,
+    );
     return;
   }
   process.stderr.write(`tools: unknown command "${command}"\n${USAGE}`);
@@ -313,13 +348,22 @@ function detect(section) {
   // human, so the plan calls both "manual" instead of probing the machine.
   if (section.manager === 'manual' || section.manager === 'msstore') return 'manual';
   if (section.manager === 'winget') {
-    const result = run('winget', ['list', '--id', section.id, '--exact', '--source', section.manager, '--disable-interactivity']);
+    const result = run('winget', [
+      'list',
+      '--id',
+      section.id,
+      '--exact',
+      '--source',
+      section.manager,
+      '--disable-interactivity',
+    ]);
     if (result.status === null) return 'unknown';
     return (result.stdout ?? '').includes(section.id) ? 'present' : 'missing';
   }
   if (section.manager === 'apt') {
-    const present = sectionPackages(section)
-      .every((pkg) => run('dpkg-query', ['-W', '-f=${Version}', String(pkg)]).status === 0);
+    const present = sectionPackages(section).every(
+      (pkg) => run('dpkg-query', ['-W', '-f=${Version}', String(pkg)]).status === 0,
+    );
     return present ? 'present' : 'missing';
   }
   if (section.manager === 'brew') {

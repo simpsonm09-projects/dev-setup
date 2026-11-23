@@ -1,0 +1,39 @@
+name: windows
+
+# The local-model lifecycle helper drives PowerShell on a Windows target, which is
+# slow and cannot run on the Linux pull request runner. It runs on `main`, weekly
+# and on demand instead of on the required pull request path. See C5.4.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-model-windows:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned tools
+        uses: jdx/mise-action@9b200bcecbfd6303e69a4a261b2e09e3757440a7 # v5.2.0
+      - name: Require PowerShell 7
+        shell: pwsh
+        run: |
+          if ($PSVersionTable.PSVersion.Major -lt 7) {
+            throw "PowerShell 7 or newer is required; found $($PSVersionTable.PSVersion)."
+          }
+      - name: Run the local model lifecycle tests
+        run: just local-model-check

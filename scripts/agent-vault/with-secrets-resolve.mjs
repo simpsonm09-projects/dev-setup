@@ -2,7 +2,11 @@ import { statSync } from 'node:fs';
 import { extname, isAbsolute, posix, win32 } from 'node:path';
 
 function isFile(path) {
-  try { return statSync(path).isFile(); } catch { return false; }
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
 }
 
 // Only local absolute paths are trusted: a drive-letter path on Windows and a slash path on
@@ -20,7 +24,9 @@ export function pathApiFor(platform) {
 // Windows names are case-insensitive, so a lookup folds case there.
 export function envValue(platform, env, name) {
   const wanted = platform === 'win32' ? name.toUpperCase() : name;
-  const key = Object.keys(env).find((candidate) => (platform === 'win32' ? candidate.toUpperCase() : candidate) === wanted);
+  const key = Object.keys(env).find(
+    (candidate) => (platform === 'win32' ? candidate.toUpperCase() : candidate) === wanted,
+  );
   return key === undefined ? undefined : env[key];
 }
 
@@ -28,7 +34,10 @@ export function envValue(platform, env, name) {
 // applies unless the name already carries one of its extensions.
 function executableNames(platform, name, env) {
   if (platform !== 'win32') return [name];
-  const extensions = (envValue(platform, env, 'PATHEXT') ?? '.COM;.EXE;.BAT;.CMD').split(';').map((ext) => ext.trim()).filter(Boolean);
+  const extensions = (envValue(platform, env, 'PATHEXT') ?? '.COM;.EXE;.BAT;.CMD')
+    .split(';')
+    .map((ext) => ext.trim())
+    .filter(Boolean);
   const suffix = extname(name).toUpperCase();
   if (suffix && extensions.some((ext) => ext.toUpperCase() === suffix)) return [name];
   return extensions.map((ext) => `${name}${ext}`);
@@ -53,7 +62,8 @@ export function findOnPath(platform, env, names, exists = isFile) {
 // with a path separator, or already absolute on this host, is used as written
 // after being made absolute; a bare name is searched on PATH.
 export function resolveTarget(command, platform, env, exists = isFile) {
-  if (/[\\/]/.test(command)) return isAbsolute(command) ? command : pathApiFor(platform).resolve(command);
+  if (/[\\/]/.test(command))
+    return isAbsolute(command) ? command : pathApiFor(platform).resolve(command);
   return findOnPath(platform, env, executableNames(platform, command, env), exists);
 }
 
@@ -71,7 +81,15 @@ export function resolveInfisical(platform, env, exists = isFile) {
   if (override) return validOverride(platform, override, exists);
   const appData = envValue(platform, env, 'APPDATA');
   if (platform === 'win32' && isLocalAbsolute(platform, appData)) {
-    const installed = pathApiFor(platform).join(appData, 'npm', 'node_modules', '@infisical', 'cli', 'bin', 'infisical.exe');
+    const installed = pathApiFor(platform).join(
+      appData,
+      'npm',
+      'node_modules',
+      '@infisical',
+      'cli',
+      'bin',
+      'infisical.exe',
+    );
     if (exists(installed)) return installed;
   }
   return findOnPath(platform, env, [platform === 'win32' ? 'infisical.exe' : 'infisical'], exists);

@@ -18,7 +18,8 @@ function renderWindowsApps(manifest) {
       role: tool.role,
       installByDefault: section.installByDefault ?? tool.installByDefault ?? true,
     };
-    if (section.requiresExplicitOptIn ?? tool.requiresExplicitOptIn) entry.requiresExplicitOptIn = true;
+    if (section.requiresExplicitOptIn ?? tool.requiresExplicitOptIn)
+      entry.requiresExplicitOptIn = true;
     entry.version = section.version ?? null;
     entry.versionPolicy = section.policy ?? tool.policy ?? 'latest';
     if (Array.isArray(section.installedAliases)) entry.installedAliases = section.installedAliases;
@@ -51,7 +52,8 @@ export function sectionPackages(section) {
 
 // npm installers receive a strict exact version as a separate argv value.
 export function pinnedVersion(tool) {
-  return typeof tool.version === 'string' && /^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(tool.version)
+  return typeof tool.version === 'string' &&
+    /^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(tool.version)
     ? tool.version
     : null;
 }
@@ -83,7 +85,9 @@ function renderWslPackages(manifest) {
     } else if (section.manager === 'npm') {
       const version = pinnedVersion(tool);
       for (const pkg of sectionPackages(section)) {
-        npmPackages.push(version ? { id: tool.id, package: pkg, version } : { id: tool.id, package: pkg });
+        npmPackages.push(
+          version ? { id: tool.id, package: pkg, version } : { id: tool.id, package: pkg },
+        );
       }
     } else if (section.manager === 'manual') {
       manualTools[tool.id] = {
@@ -135,15 +139,24 @@ function renderPlan(manifest) {
 export function installLabel(section) {
   const packages = Array.isArray(section.packages) ? section.packages.join(', ') : section.package;
   switch (section.manager) {
-    case 'winget': return `winget \`${section.id}\``;
-    case 'msstore': return `msstore \`${section.id}\``;
-    case 'scoop': return `scoop \`${packages}\``;
-    case 'apt': return `apt \`${packages}\``;
-    case 'snap': return `snap \`${packages}${section.classic ? ' --classic' : ''}\``;
-    case 'npm': return `npm \`${packages}\``;
-    case 'brew': return section.formula ? `brew \`${section.formula}\`` : `cask \`${section.cask}\``;
-    case 'manual': return section.url ? `manual (${section.url})` : 'manual';
-    default: return section.manager;
+    case 'winget':
+      return `winget \`${section.id}\``;
+    case 'msstore':
+      return `msstore \`${section.id}\``;
+    case 'scoop':
+      return `scoop \`${packages}\``;
+    case 'apt':
+      return `apt \`${packages}\``;
+    case 'snap':
+      return `snap \`${packages}${section.classic ? ' --classic' : ''}\``;
+    case 'npm':
+      return `npm \`${packages}\``;
+    case 'brew':
+      return section.formula ? `brew \`${section.formula}\`` : `cask \`${section.cask}\``;
+    case 'manual':
+      return section.url ? `manual (${section.url})` : 'manual';
+    default:
+      return section.manager;
   }
 }
 
@@ -232,7 +245,10 @@ function renderAgentTools(manifest) {
 function renderAgentDocs(manifest) {
   const rows = docsRows(manifest, consumesAgent);
   const blocks = [];
-  for (const [heading, kind, header] of [['Apps', 'app', 'App'], ['Developer CLI tools', 'cli', 'Tool']]) {
+  for (const [heading, kind, header] of [
+    ['Apps', 'app', 'App'],
+    ['Developer CLI tools', 'cli', 'Tool'],
+  ]) {
     if (!manifest.tools.some((tool) => tool.kind === kind && consumesAgent(tool))) continue;
     blocks.push(`## ${heading}\n\n${rows(kind, header)}`);
   }
@@ -250,7 +266,7 @@ ${POLICY}`;
 
 export function renderArtifacts(manifest) {
   return {
-    'Brewfile': renderBrewfile(manifest),
+    Brewfile: renderBrewfile(manifest),
     'windows/apps.json': `${JSON.stringify(renderWindowsApps(manifest), null, 2)}\n`,
     'windows/manual-apps.json': `${JSON.stringify(renderWindowsManual(manifest), null, 2)}\n`,
     'wsl/packages.json': `${JSON.stringify(renderWslPackages(manifest), null, 2)}\n`,

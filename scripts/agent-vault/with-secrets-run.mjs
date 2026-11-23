@@ -33,15 +33,27 @@ export function signalStatus(signal) {
 export function treeKillCommand(platform, pid) {
   if (platform !== 'win32' || pid === undefined) return null;
   const systemRoot = process.env.SystemRoot ?? process.env.WINDIR ?? 'C:\\Windows';
-  return { file: join(systemRoot, 'System32', 'taskkill.exe'), args: ['/T', '/F', '/PID', String(pid)] };
+  return {
+    file: join(systemRoot, 'System32', 'taskkill.exe'),
+    args: ['/T', '/F', '/PID', String(pid)],
+  };
 }
 
 // Signals the child, or on POSIX its whole process group when it leads one.
 function signalChild(child, signal, grouped) {
   if (grouped) {
-    try { process.kill(-child.pid, signal); return; } catch { /* Not a group leader any more; fall back to the child. */ }
+    try {
+      process.kill(-child.pid, signal);
+      return;
+    } catch {
+      /* Not a group leader any more; fall back to the child. */
+    }
   }
-  try { child.kill(signal); } catch { /* The child may already have exited. */ }
+  try {
+    child.kill(signal);
+  } catch {
+    /* The child may already have exited. */
+  }
 }
 
 // Forwards each planned signal to the child and records the last one forwarded,
@@ -57,7 +69,9 @@ function registerSignals(child, plan, onForward, grouped) {
     ...plan.absorb.map((signal) => [signal, absorb]),
   ];
   for (const [signal, listener] of listeners) process.on(signal, listener);
-  return () => { for (const [signal, listener] of listeners) process.removeListener(signal, listener); };
+  return () => {
+    for (const [signal, listener] of listeners) process.removeListener(signal, listener);
+  };
 }
 
 // Ends the child and its descendants. Resolves when the Windows kill command has finished.
@@ -84,20 +98,52 @@ function killTree(child, platform, grouped) {
 // stays off, so arguments are never parsed by a shell. A detached child leads its
 // own process group on POSIX, so a kill can reach its grandchildren.
 export function childSpawnOptions({ env, cwd, capture, detached = false }) {
-  return { shell: false, windowsHide: true, detached, env, cwd, stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit' };
+  return {
+    shell: false,
+    windowsHide: true,
+    detached,
+    env,
+    cwd,
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+  };
 }
 
 // Resolves once the child has exited and its output is settled. A child that
 // exceeds timeoutMs has its tree killed and is reported as timedOut; an
 // interrupted one reports the signal in `interrupted`. Pass group for a CLI child.
-export function runChild(file, args, env, { capture = false, plan = NO_SIGNALS, cwd, timeoutMs = Infinity, platform = process.platform, group = false, exitGraceMs = EXIT_GRACE_MS } = {}) {
+export function runChild(
+  file,
+  args,
+  env,
+  {
+    capture = false,
+    plan = NO_SIGNALS,
+    cwd,
+    timeoutMs = Infinity,
+    platform = process.platform,
+    group = false,
+    exitGraceMs = EXIT_GRACE_MS,
+  } = {},
+) {
   return new Promise((resolvePromise) => {
     const grouped = group && platform !== 'win32';
     let child;
     try {
-      child = spawn(file, args, { ...childSpawnOptions({ env, cwd, capture, detached: grouped }), windowsHide: true });
+      child = spawn(file, args, {
+        ...childSpawnOptions({ env, cwd, capture, detached: grouped }),
+        windowsHide: true,
+      });
     } catch {
-      resolvePromise({ status: 127, error: true, spawnFailed: true, overflowed: false, timedOut: false, interrupted: null, stdout: '', stderr: '' });
+      resolvePromise({
+        status: 127,
+        error: true,
+        spawnFailed: true,
+        overflowed: false,
+        timedOut: false,
+        interrupted: null,
+        stdout: '',
+        stderr: '',
+      });
       return;
     }
     const stdout = [];
@@ -111,7 +157,14 @@ export function runChild(file, args, env, { capture = false, plan = NO_SIGNALS, 
     let pendingKill = Promise.resolve();
     let timer = null;
     let graceTimer = null;
-    const unregister = registerSignals(child, plan, (signal) => { interrupted = signal; }, grouped);
+    const unregister = registerSignals(
+      child,
+      plan,
+      (signal) => {
+        interrupted = signal;
+      },
+      grouped,
+    );
     const finish = async (code, signal) => {
       if (finished) return;
       finished = true;
@@ -124,7 +177,7 @@ export function runChild(file, args, env, { capture = false, plan = NO_SIGNALS, 
         child.stderr?.destroy();
       }
       resolvePromise({
-        status: spawnFailed ? 127 : overflowed ? 1 : code ?? signalStatus(signal),
+        status: spawnFailed ? 127 : overflowed ? 1 : (code ?? signalStatus(signal)),
         error: spawnFailed || overflowed,
         spawnFailed,
         overflowed,
