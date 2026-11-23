@@ -1,4 +1,12 @@
+> **Retired.** Workstations are Linux now; machine setup lives in the sakuragaoka-homelab machine repositories.
+
 # dev-setup
+
+Retired 2026-11-23. This repository is a read-only archive. Do not add setup
+work here; the machine repositories under
+[`sakuragaoka-homelab`](https://github.com/sakuragaoka-homelab) own workstation
+setup now. Everything below describes the Windows and WSL2 setup this
+repository used to apply.
 
 Repeatable workstation setup for the Windows 10 laptop and Windows 11 desktop, with Ubuntu on WSL2. This repository owns general workstation tools and setup documentation; AI prompts, agents, and shared AI workflows belong in [`maxstack`](https://github.com/simpsonm09-projects/maxstack).
 
